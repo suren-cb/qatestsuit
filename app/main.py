@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from contextlib import asynccontextmanager
 import os
+import secrets
+import base64
 from datetime import datetime
 import time
 
@@ -26,6 +28,42 @@ from app.models import (
 docker_manager: DockerManager = None
 image_registry: ImageRegistry = None
 start_time = time.time()
+
+# Basic Auth credentials from environment
+BASIC_AUTH_USERNAME = os.getenv("BASIC_AUTH_USERNAME", "qatestsuit")
+BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD", "d09r5uBDo7o3cq3C")
+
+
+def verify_basic_auth(request: Request):
+    """Verify HTTP Basic Auth credentials"""
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Basic "):
+        return None
+
+    try:
+        decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+        username, password = decoded.split(":", 1)
+
+        if secrets.compare_digest(username, BASIC_AUTH_USERNAME) and \
+           secrets.compare_digest(password, BASIC_AUTH_PASSWORD):
+            return username
+    except Exception:
+        pass
+
+    return None
+
+
+async def require_auth(request: Request):
+    """Dependency that enforces Basic Auth on all routes"""
+    user = verify_basic_auth(request)
+    if user is None:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Authentication required"},
+            headers={"WWW-Authenticate": 'Basic realm="QA Test Suite"'},
+        )
+    return user
 
 
 @asynccontextmanager
@@ -51,6 +89,7 @@ async def lifespan(app: FastAPI):
         print(f"Seeded {seeded} preconfigured images from {config_file}")
 
     print(f"Loaded {len(image_registry.list_images())} registered images")
+    print(f"Basic Auth: {BASIC_AUTH_USERNAME} / {BASIC_AUTH_PASSWORD}")
     print("Server ready!")
 
     yield
@@ -80,17 +119,26 @@ app.add_middleware(
 )
 
 
-# Authentication dependency
-async def verify_api_key(x_api_key: str = Header(None)):
-    """Verify API key if configured"""
-    required_key = os.getenv("API_KEY")
+# Basic Auth middleware - protects ALL routes including static files
+@app.middleware("http")
+async def basic_auth_middleware(request: Request, call_next):
+    """Enforce HTTP Basic Auth on every request"""
+    # Allow CORS preflight through
+    if request.method == "OPTIONS":
+        return await call_next(request)
 
-    if required_key and required_key != "your-secret-api-key-here":
-        if not x_api_key or x_api_key != required_key:
-            raise HTTPException(status_code=401, detail="Invalid API key")
+    user = verify_basic_auth(request)
+    if user is None:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Authentication required"},
+            headers={"WWW-Authenticate": 'Basic realm="QA Test Suite"'},
+        )
+
+    return await call_next(request)
 
 
-# Health check
+# Health check (still behind auth)
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
@@ -109,6 +157,7 @@ async def api_info():
         "name": "QA Docker Test Manager API",
         "version": "1.0.0",
         "description": "Docker container management for QA testing",
+        "auth": "HTTP Basic Auth",
         "endpoints": {
             "POST /api/images/register": "Register a Docker image with human-readable ID",
             "GET /api/images": "List all registered images",
@@ -128,10 +177,7 @@ async def api_info():
 # ===== IMAGE REGISTRATION ENDPOINTS =====
 
 @app.post("/api/images/register", response_model=RegisterImageResponse)
-async def register_image(
-    request: RegisterImageRequest,
-    api_key: str = Depends(verify_api_key)
-):
+async def register_image(request: RegisterImageRequest):
     """
     Register a Docker image and get a human-readable ID
 
@@ -192,10 +238,7 @@ async def get_image(image_id: str):
 
 
 @app.delete("/api/images/{image_id}")
-async def delete_image(
-    image_id: str,
-    api_key: str = Depends(verify_api_key)
-):
+async def delete_image(image_id: str):
     """Delete a registered image"""
     if not image_registry.delete_image(image_id):
         raise HTTPException(status_code=404, detail=f"Image '{image_id}' not found")
@@ -209,10 +252,7 @@ async def delete_image(
 # ===== CONTAINER MANAGEMENT ENDPOINTS =====
 
 @app.post("/api/containers/start", response_model=StartContainerResponse)
-async def start_container(
-    request: StartContainerRequest,
-    api_key: str = Depends(verify_api_key)
-):
+async def start_container(request: StartContainerRequest):
     """
     Start a new container from a registered image
 
@@ -266,10 +306,7 @@ async def start_container(
 
 
 @app.post("/api/containers/{instance_id}/stop", response_model=StopContainerResponse)
-async def stop_container(
-    instance_id: str,
-    api_key: str = Depends(verify_api_key)
-):
+async def stop_container(instance_id: str):
     """Stop and remove a container"""
     try:
         result = await docker_manager.stop_container(instance_id)
@@ -311,7 +348,7 @@ async def list_containers():
 
 
 @app.post("/api/containers/stop-all")
-async def stop_all_containers(api_key: str = Depends(verify_api_key)):
+async def stop_all_containers():
     """Stop all running containers"""
     try:
         result = await docker_manager.stop_all_containers()
@@ -324,10 +361,7 @@ async def stop_all_containers(api_key: str = Depends(verify_api_key)):
 
 
 @app.post("/api/containers/cleanup")
-async def cleanup_containers(
-    max_age_seconds: int = 3600,
-    api_key: str = Depends(verify_api_key)
-):
+async def cleanup_containers(max_age_seconds: int = 3600):
     """Cleanup stale containers older than max_age_seconds"""
     try:
         result = await docker_manager.cleanup_stale_containers(max_age_seconds)
@@ -342,10 +376,7 @@ async def cleanup_containers(
 # ===== IMAGE DEPENDENCY ENDPOINTS =====
 
 @app.post("/api/images/{image_id}/pull")
-async def pull_image_dependencies(
-    image_id: str,
-    api_key: str = Depends(verify_api_key)
-):
+async def pull_image_dependencies(image_id: str):
     """
     Pull the Docker image and all its dependencies.
 
@@ -399,7 +430,7 @@ if __name__ == "__main__":
     import uvicorn
 
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("PORT", "8085"))
 
     uvicorn.run(
         "app.main:app",

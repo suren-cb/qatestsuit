@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "QA Docker Test Manager API",
+    "description": "Docker container management API for QA testing with human-readable image IDs.\n\nAuth: HTTP Basic Auth\nUsername: qatestsuit\nPassword: d09r5uBDo7o3cq3C",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{username}}", "type": "string" },
+      { "key": "password", "value": "{{password}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8085" },
+    { "key": "username", "value": "qatestsuit" },
+    { "key": "password", "value": "d09r5uBDo7o3cq3C" },
+    { "key": "image_id", "value": "filebrowser" },
+    { "key": "instance_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] },
+            "description": "Check if the API server is healthy and running."
+          }
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/info", "host": ["{{base_url}}"], "path": ["api", "info"] },
+            "description": "Get API version, description, and list of all available endpoints."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Image Registry",
+      "item": [
+        {
+          "name": "List All Images",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/images", "host": ["{{base_url}}"], "path": ["api", "images"] },
+            "description": "List all registered Docker images with their IDs, names, ports, and configuration."
+          }
+        },
+        {
+          "name": "Get Image Details",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/images/{{image_id}}", "host": ["{{base_url}}"], "path": ["api", "images", "{{image_id}}"] },
+            "description": "Get detailed information about a specific registered image including env vars, dependencies, and health check config."
+          }
+        },
+        {
+          "name": "Register New Image",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/images/register", "host": ["{{base_url}}"], "path": ["api", "images", "register"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"nginx-demo\",\n  \"image_name\": \"nginx:latest\",\n  \"exposed_port\": 80,\n  \"description\": \"NGINX web server for testing\",\n  \"env\": [\"NGINX_HOST=localhost\"],\n  \"health_check_path\": \"/\"\n}"
+            },
+            "description": "Register a new Docker image with a human-readable ID. The ID is auto-generated from the name."
+          }
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/images/{{image_id}}", "host": ["{{base_url}}"], "path": ["api", "images", "{{image_id}}"] },
+            "description": "Remove a registered image from the registry. Does not affect running containers."
+          }
+        },
+        {
+          "name": "Pull Image & Dependencies",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/images/{{image_id}}/pull", "host": ["{{base_url}}"], "path": ["api", "images", "{{image_id}}", "pull"] },
+            "description": "Pre-download the Docker image and all its dependency images so container startup is fast."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Container Management",
+      "item": [
+        {
+          "name": "Start Container",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data) {",
+                  "    pm.collectionVariables.set('instance_id', jsonData.data.instance_id);",
+                  "    console.log('Instance ID saved: ' + jsonData.data.instance_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/containers/start", "host": ["{{base_url}}"], "path": ["api", "containers", "start"] },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image_id\": \"{{image_id}}\"\n}"
+            },
+            "description": "Start a new container instance from a registered image. Returns instance_id, URL, and port mapping. The instance_id is auto-saved to collection variables."
+          }
+        },
+        {
+          "name": "List Running Containers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/containers", "host": ["{{base_url}}"], "path": ["api", "containers"] },
+            "description": "List all currently running container instances with their status, URLs, ports, and uptime."
+          }
+        },
+        {
+          "name": "Get Container Status",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/containers/{{instance_id}}", "host": ["{{base_url}}"], "path": ["api", "containers", "{{instance_id}}"] },
+            "description": "Get detailed status of a specific running container including health, uptime, and port info."
+          }
+        },
+        {
+          "name": "Stop Container",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/containers/{{instance_id}}/stop", "host": ["{{base_url}}"], "path": ["api", "containers", "{{instance_id}}", "stop"] },
+            "description": "Stop and remove a specific container instance and all its dependency containers."
+          }
+        },
+        {
+          "name": "Stop All Containers",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/containers/stop-all", "host": ["{{base_url}}"], "path": ["api", "containers", "stop-all"] },
+            "description": "Stop and remove ALL running container instances."
+          }
+        },
+        {
+          "name": "Cleanup Stale Containers",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/containers/cleanup?max_age_seconds=3600",
+              "host": ["{{base_url}}"],
+              "path": ["api", "containers", "cleanup"],
+              "query": [
+                { "key": "max_age_seconds", "value": "3600", "description": "Remove containers older than this many seconds (default: 3600)" }
+              ]
+            },
+            "description": "Cleanup containers that have been running longer than max_age_seconds."
+          }
+        }
+      ]
+    }
+  ]
+}

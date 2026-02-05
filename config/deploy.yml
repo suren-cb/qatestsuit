@@ -1,0 +1,57 @@
+# Name of your application. Used to uniquely configure containers.
+service: qatestsuit
+
+# Name of the container image.
+image: suren-cb/qatestsuit
+
+# Deployment timeouts
+deploy_timeout: 120
+drain_timeout: 30
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - 64.227.97.224
+    proxy: false
+    options:
+      publish:
+        - "8085:8085"
+      volume:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+      health-cmd: "sh -c 'pgrep -f uvicorn'"
+
+# Credentials for your image host.
+registry:
+  server: ghcr.io
+  username: suren-cb
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# Configure builder setup.
+builder:
+  arch: amd64
+  remote: ssh://root@64.227.97.224
+
+# Inject ENV variables into containers (secrets come from .kamal/secrets).
+env:
+  clear:
+    ENVIRONMENT: prod
+    HOST: 0.0.0.0
+    PORT: "8085"
+    DOCKER_HOST: unix:///var/run/docker.sock
+    MAX_CONTAINERS: "10"
+    CONTAINER_TIMEOUT_SECONDS: "3600"
+    AUTO_CLEANUP_INTERVAL_SECONDS: "300"
+    DB_FILE: data/registry.json
+  secret:
+    - API_KEY
+    - BASIC_AUTH_USERNAME
+    - BASIC_AUTH_PASSWORD
+
+# Persistent storage for registry data
+volumes:
+  - "/db:/app/data"
+
+# Readiness delay - time to wait after container starts before considering it ready
+readiness_delay: 15

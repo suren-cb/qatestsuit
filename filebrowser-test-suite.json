@@ -1,10 +1,10 @@
 {
   "name": "FileBrowser - File Creation, Upload, Listing, and Deletion",
   "description": "Verify login, creating new files and folders, uploading files, listing directory contents, renaming, downloading, deleting files, and verifying all changes in the file manager UI",
-  "baseUrl": "http://localhost:8082",
+  "baseUrl": "http://localhost:8087",
   "credentials": {"username": "admin", "password": "admin12345678"},
   "steps": [
-    "Navigate to http://localhost:8082/ in the browser",
+    "Navigate to http://localhost:8087/ in the browser",
     "Verify the login page loads showing the File Browser logo, a username field, a password field, and a Login button",
     "Enter 'admin' in the username field and 'admin12345678' in the password field and click the Login button",
     "Verify successful login by confirming the file manager dashboard loads showing an empty root directory with the toolbar at the top",

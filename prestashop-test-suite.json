@@ -1,9 +1,9 @@
 {
   "name": "PrestaShop - Product Search, Filters, Add to Cart and Cart Verification",
   "description": "Verify product search functionality, search result filtering by category/size/color/price, adding products to cart, and validating cart contents including quantity and pricing accuracy",
-  "baseUrl": "http://localhost:8081",
+  "baseUrl": "http://localhost:8086",
   "steps": [
-    "Navigate to the PrestaShop homepage at http://localhost:8081/",
+    "Navigate to the PrestaShop homepage at http://localhost:8086/",
     "Verify the homepage loads with the PrestaShop logo, a search bar in the header, and a cart icon showing 0 items",
     "Type 't-shirt' into the search bar in the header and press Enter",
     "Verify the search results page loads with the heading 'Search results' and displays the 'Hummingbird Printed T-Shirt' product",
