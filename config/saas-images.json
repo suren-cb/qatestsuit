@@ -1,0 +1,81 @@
+{
+  "images": [
+    {
+      "id": "prestashop",
+      "name": "PrestaShop",
+      "imageName": "prestashop/prestashop:latest",
+      "exposedPort": 80,
+      "hostPort": 8081,
+      "description": "Open-source ecommerce platform for testing",
+      "env": [
+        "DB_SERVER=prestashop-mysql",
+        "DB_NAME=prestashop",
+        "DB_USER=prestashop",
+        "DB_PASSWD=prestashop_pass",
+        "PS_INSTALL_AUTO=1",
+        "PS_DEV_MODE=0",
+        "PS_DOMAIN=localhost:8081",
+        "ADMIN_MAIL=admin@prestashop.com",
+        "ADMIN_PASSWD=admin123"
+      ],
+      "waitTime": 120000,
+      "healthCheck": "/",
+      "dependencies": [
+        {
+          "id": "prestashop-mysql",
+          "imageName": "mariadb:10.11",
+          "exposedPort": 3306,
+          "env": [
+            "MYSQL_ROOT_PASSWORD=admin",
+            "MYSQL_DATABASE=prestashop",
+            "MYSQL_USER=prestashop",
+            "MYSQL_PASSWORD=prestashop_pass"
+          ],
+          "waitTime": 30000,
+          "healthCheck": null
+        }
+      ]
+    },
+    {
+      "id": "filebrowser",
+      "name": "FileBrowser",
+      "imageName": "filebrowser/filebrowser:latest",
+      "exposedPort": 8080,
+      "hostPort": 8082,
+      "description": "Web-based file manager with upload, download, and preview support",
+      "env": [],
+      "entrypoint": ["sh", "-c"],
+      "command": ["filebrowser config init -a 0.0.0.0 -p 8080 -d /database/filebrowser.db -r /srv && filebrowser users add admin admin12345678 --perm.admin -d /database/filebrowser.db && exec filebrowser -a 0.0.0.0 -p 8080 -d /database/filebrowser.db -r /srv"],
+      "credentials": {"username": "admin", "password": "admin12345678"},
+      "waitTime": 5000,
+      "healthCheck": "/health"
+    },
+    {
+      "id": "focalboard",
+      "name": "Focalboard",
+      "imageName": "mattermost/focalboard:latest",
+      "exposedPort": 8000,
+      "hostPort": 8083,
+      "description": "Open-source task and project management tool with board, table, and calendar views",
+      "env": [],
+      "waitTime": 10000,
+      "healthCheck": "/"
+    },
+    {
+      "id": "centrifugo",
+      "name": "Centrifugo",
+      "imageName": "centrifugal/centrifugo:v6",
+      "exposedPort": 8000,
+      "hostPort": 8084,
+      "description": "Real-time messaging server supporting WebSocket, SSE, HTTP-streaming, and gRPC",
+      "env": [
+        "CENTRIFUGO_ADMIN=true",
+        "CENTRIFUGO_ADMIN_INSECURE=true",
+        "CENTRIFUGO_CLIENT_INSECURE=true",
+        "CENTRIFUGO_ALLOW_SUBSCRIBE_FOR_CLIENT=true"
+      ],
+      "waitTime": 5000,
+      "healthCheck": "/health"
+    }
+  ]
+}

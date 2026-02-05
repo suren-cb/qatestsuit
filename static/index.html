@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Docker Service Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    header h1 span { color: #38bdf8; }
+
+    .header-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .header-stats .stat-val { color: #38bdf8; font-weight: 600; }
+
+    .toolbar {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .toolbar input {
+      flex: 1;
+      max-width: 360px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .toolbar input:focus { border-color: #38bdf8; }
+
+    .toolbar input::placeholder { color: #64748b; }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      padding: 0 24px 24px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 20px;
+      transition: border-color 0.15s;
+      position: relative;
+    }
+
+    .card:hover { border-color: #475569; }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .card-id {
+      font-size: 12px;
+      color: #64748b;
+      font-family: monospace;
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .badge-stopped { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+    .badge-running { background: #065f46; color: #6ee7b7; }
+    .badge-starting { background: #92400e; color: #fcd34d; }
+    .badge-stopping { background: #7c2d12; color: #fdba74; }
+    .badge-error { background: #7f1d1d; color: #fca5a5; }
+
+    .card-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-start {
+      background: #059669;
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-start:hover:not(:disabled) { background: #047857; }
+
+    .btn-stop {
+      background: #dc2626;
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-stop:hover:not(:disabled) { background: #b91c1c; }
+
+    .btn-open {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .btn-open:hover:not(:disabled) { background: #1d4ed8; }
+
+    .card-instance {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #334155;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .card-instance a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+
+    .card-instance a:hover { text-decoration: underline; }
+
+    .instance-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      max-width: 380px;
+      animation: slideIn 0.2s ease-out;
+    }
+
+    .toast-success { background: #065f46; color: #6ee7b7; }
+    .toast-error { background: #7f1d1d; color: #fca5a5; }
+    .toast-info { background: #1e3a5f; color: #93c5fd; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+      color: #64748b;
+    }
+
+    .empty-state h2 { font-size: 18px; margin-bottom: 8px; color: #94a3b8; }
+
+    .connection-error {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .connection-error h2 { color: #fca5a5; margin-bottom: 8px; }
+    .connection-error p { color: #94a3b8; font-size: 14px; }
+    .connection-error code {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: #1e293b;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>QA</span> Docker Service Manager</h1>
+  <div class="header-stats">
+    <div>Services: <span class="stat-val" id="total-count">-</span></div>
+    <div>Running: <span class="stat-val" id="running-count">-</span></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search services..." autocomplete="off">
+  <button class="btn btn-danger" id="stop-all-btn" disabled>Stop All</button>
+</div>
+
+<div class="grid" id="services-grid"></div>
+<div id="status-area"></div>
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API = window.location.origin;
+const API_KEY = 'your-secret-api-key-here';
+
+let services = [];
+let runningContainers = {};
+let busyServices = {};
+
+const headers = {
+  'Content-Type': 'application/json',
+  'X-API-Key': API_KEY
+};
+
+// Toast notifications
+function toast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Fetch all registered images
+async function fetchServices() {
+  try {
+    const res = await fetch(`${API}/api/images`);
+    const data = await res.json();
+    if (data.success) {
+      services = data.data.images;
+    }
+  } catch (e) {
+    document.getElementById('status-area').innerHTML = `
+      <div class="connection-error">
+        <h2>Cannot connect to API</h2>
+        <p>Make sure the backend server is running:</p>
+        <code>uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000</code>
+      </div>`;
+    throw e;
+  }
+}
+
+// Fetch running containers
+async function fetchContainers() {
+  try {
+    const res = await fetch(`${API}/api/containers`);
+    const data = await res.json();
+    runningContainers = {};
+    if (data.success && data.data.containers) {
+      for (const c of data.data.containers) {
+        if (!runningContainers[c.image_id]) {
+          runningContainers[c.image_id] = [];
+        }
+        runningContainers[c.image_id].push(c);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch containers:', e);
+  }
+}
+
+// Start a service
+async function startService(imageId) {
+  busyServices[imageId] = 'starting';
+  render();
+  try {
+    const res = await fetch(`${API}/api/containers/start`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ image_id: imageId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`Started ${imageId} at ${data.data.url}`, 'success');
+    } else {
+      toast(`Failed to start ${imageId}: ${data.detail || 'Unknown error'}`, 'error');
+    }
+  } catch (e) {
+    toast(`Error starting ${imageId}: ${e.message}`, 'error');
+  }
+  delete busyServices[imageId];
+  await fetchContainers();
+  render();
+}
+
+// Stop a specific container instance
+async function stopInstance(instanceId, imageId) {
+  busyServices[imageId] = 'stopping';
+  render();
+  try {
+    const res = await fetch(`${API}/api/containers/${instanceId}/stop`, {
+      method: 'POST',
+      headers
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`Stopped ${imageId} (${instanceId})`, 'success');
+    } else {
+      toast(`Failed to stop: ${data.detail || 'Unknown error'}`, 'error');
+    }
+  } catch (e) {
+    toast(`Error stopping: ${e.message}`, 'error');
+  }
+  delete busyServices[imageId];
+  await fetchContainers();
+  render();
+}
+
+// Stop all containers for a service
+async function stopService(imageId) {
+  const instances = runningContainers[imageId] || [];
+  busyServices[imageId] = 'stopping';
+  render();
+  for (const inst of instances) {
+    try {
+      await fetch(`${API}/api/containers/${inst.instance_id}/stop`, {
+        method: 'POST',
+        headers
+      });
+    } catch (e) {}
+  }
+  toast(`Stopped all instances of ${imageId}`, 'success');
+  delete busyServices[imageId];
+  await fetchContainers();
+  render();
+}
+
+// Stop all containers
+async function stopAll() {
+  document.getElementById('stop-all-btn').disabled = true;
+  try {
+    const res = await fetch(`${API}/api/containers/stop-all`, {
+      method: 'POST',
+      headers
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`Stopped ${data.data.stopped} container(s)`, 'success');
+    }
+  } catch (e) {
+    toast(`Error: ${e.message}`, 'error');
+  }
+  await fetchContainers();
+  render();
+}
+
+function getStatusBadge(imageId) {
+  if (busyServices[imageId] === 'starting') return '<span class="badge badge-starting">Starting</span>';
+  if (busyServices[imageId] === 'stopping') return '<span class="badge badge-stopping">Stopping</span>';
+  const instances = runningContainers[imageId] || [];
+  if (instances.length > 0) return `<span class="badge badge-running">Running (${instances.length})</span>`;
+  return '<span class="badge badge-stopped">Stopped</span>';
+}
+
+function render() {
+  const query = document.getElementById('search').value.toLowerCase();
+  const filtered = services.filter(s =>
+    s.name.toLowerCase().includes(query) ||
+    s.image_id.toLowerCase().includes(query) ||
+    (s.description || '').toLowerCase().includes(query)
+  );
+
+  const totalRunning = Object.values(runningContainers).reduce((sum, arr) => sum + arr.length, 0);
+  document.getElementById('total-count').textContent = services.length;
+  document.getElementById('running-count').textContent = totalRunning;
+  document.getElementById('stop-all-btn').disabled = totalRunning === 0;
+
+  const grid = document.getElementById('services-grid');
+
+  if (filtered.length === 0 && services.length > 0) {
+    grid.innerHTML = '<div class="empty-state"><h2>No matching services</h2><p>Try a different search term</p></div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(svc => {
+    const instances = runningContainers[svc.image_id] || [];
+    const isRunning = instances.length > 0;
+    const isBusy = !!busyServices[svc.image_id];
+    const deps = (svc.dependencies || []).length;
+
+    let instancesHtml = '';
+    if (isRunning) {
+      instancesHtml = `<div class="card-instance">
+        ${instances.map(inst => `
+          <div class="instance-row">
+            <span>${inst.instance_id} &middot; <a href="${inst.url}" target="_blank">${inst.url}</a></span>
+            <span>${inst.uptime || ''}</span>
+          </div>
+        `).join('')}
+      </div>`;
+    }
+
+    return `
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">${svc.name}</div>
+            <div class="card-id">${svc.image_id}</div>
+          </div>
+          ${getStatusBadge(svc.image_id)}
+        </div>
+        <div class="card-desc">${svc.description || ''}</div>
+        <div class="card-meta">
+          <span>Image: ${svc.image_name}</span>
+          <span>Port: ${svc.host_port || svc.exposed_port}</span>
+          ${deps > 0 ? `<span>Deps: ${deps}</span>` : ''}
+        </div>
+        <div class="card-actions">
+          ${isRunning ? `
+            <button class="btn btn-stop" onclick="stopService('${svc.image_id}')" ${isBusy ? 'disabled' : ''}>
+              ${isBusy ? '<span class="spinner"></span>' : ''} Stop
+            </button>
+            <button class="btn btn-open" onclick="window.open('${instances[0].url}', '_blank')">
+              Open
+            </button>
+            <button class="btn btn-start" onclick="startService('${svc.image_id}')" ${isBusy ? 'disabled' : ''}>
+              + Instance
+            </button>
+          ` : `
+            <button class="btn btn-start" onclick="startService('${svc.image_id}')" ${isBusy ? 'disabled' : ''}>
+              ${isBusy ? '<span class="spinner"></span>' : ''} Start
+            </button>
+          `}
+        </div>
+        ${instancesHtml}
+      </div>`;
+  }).join('');
+}
+
+// Init
+async function init() {
+  try {
+    await fetchServices();
+    await fetchContainers();
+    render();
+    // Poll for container status every 5s
+    setInterval(async () => {
+      await fetchContainers();
+      render();
+    }, 5000);
+  } catch (e) {
+    console.error('Init failed:', e);
+  }
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('stop-all-btn').addEventListener('click', stopAll);
+
+init();
+</script>
+
+</body>
+</html>

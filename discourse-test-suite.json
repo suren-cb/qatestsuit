@@ -1,0 +1,33 @@
+{
+  "name": "Discourse Forum - Login, Topic Browse, and Search Flow",
+  "description": "Verify user login, topic browsing with category filtering, search functionality, and read-only topic viewing",
+  "steps": [
+    "Navigate to https://try.discourse.org",
+    "Click the 'Log In' button in the top navigation bar",
+    "Enter username 'inbaperson' in the username input field",
+    "Enter password 'K7#mP9$vL2@xQ8!' in the password input field",
+    "Click the 'Log in' button to authenticate",
+    "Verify successful login by checking for user profile icon or username in the header",
+    "Verify the topic list table is displayed with class 'topic-list'",
+    "Verify multiple topic entries are visible with topic titles and metadata",
+    "Click on a category filter link with class 'category-link' for 'General' category",
+    "Verify the page displays filtered topics with the URL pattern '/c/general/*'",
+    "Verify the category badge is displayed showing 'General'",
+    "Verify the filtered topic list contains only topics from the 'General' category",
+    "Click on the search icon button with class 'search-icon' in the top navigation",
+    "In the search input field with id 'search-term', enter the search query 'welcome'",
+    "Press Enter or click the search button to execute the search",
+    "Verify the search results page loads with URL '/search?q=welcome'",
+    "Verify at least one search result is displayed in the results container with class 'fps-result'",
+    "Click on the first search result topic link",
+    "Verify the topic page loads with the topic title displayed in element with class 'fancy-title'",
+    "Verify the first post content is visible in the element with class 'cooked'",
+    "Verify the post metadata displays author name, timestamp, and reply count",
+    "Click the user menu icon in the top right with class 'icon-user'",
+    "In the dropdown menu with class 'user-menu', click 'Preferences'",
+    "Verify the user preferences page loads with URL pattern '/u/*/preferences'",
+    "Verify the preferences sections are displayed (Account, Profile, Notifications, etc.)",
+    "Click the user menu icon again and click 'Logout' button",
+    "Verify successful logout by checking the 'Sign Up' and 'Log In' buttons are visible in the header"
+  ]
+}

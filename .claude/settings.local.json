@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:discourse.org)",
+      "WebFetch(domain:try.discourse.org)",
+      "WebFetch(domain:basecamp.com)",
+      "WebFetch(domain:launchpad.37signals.com)",
+      "WebSearch",
+      "WebFetch(domain:trello.com)",
+      "WebFetch(domain:id.atlassian.com)",
+      "WebFetch(domain:notion.so)",
+      "WebFetch(domain:www.saucedemo.com)",
+      "Bash(uv:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker network ls:*)",
+      "Bash(docker network rm:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(docker run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
