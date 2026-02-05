@@ -20,6 +20,11 @@ RUN uv sync --frozen --no-dev
 # Create data directory for registry persistence
 RUN mkdir -p data
 
+RUN apt-get update && apt-get install -y --no-install-recommends procps curl && rm -rf /var/lib/apt/lists/*
+
 EXPOSE 8085
+
+HEALTHCHECK --interval=5s --timeout=5s --start-period=10s --retries=3 \
+  CMD pgrep -f uvicorn || exit 1
 
 CMD ["uv", "run", "--no-dev", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8085"]
