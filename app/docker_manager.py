@@ -9,11 +9,12 @@ import shortuuid
 class DockerManager:
     """Manages Docker container lifecycle"""
 
-    def __init__(self, docker_host: str = "unix:///var/run/docker.sock"):
+    def __init__(self, docker_host: str = "unix:///var/run/docker.sock", public_host: str = "localhost"):
         try:
             self.client = docker.DockerClient(base_url=docker_host)
             self.containers: Dict[str, Dict] = {}
             self.max_containers = 10
+            self.public_host = public_host
         except Exception as e:
             raise Exception(f"Failed to connect to Docker: {e}")
 
@@ -187,13 +188,18 @@ class DockerManager:
                     dep_containers.append(dep_info)
                     print(f"Dependency '{dep_info['dep_id']}' started on port {dep_info['host_port']}")
 
+            # Replace {PUBLIC_HOST} placeholder in env vars
+            resolved_env = [
+                e.replace("{PUBLIC_HOST}", self.public_host) for e in (env or [])
+            ]
+
             # Create container configuration
             container_config = {
                 "image": image_name,
                 "name": container_name,
                 "ports": {f"{exposed_port}/tcp": host_port},
                 "detach": True,
-                "environment": env or [],
+                "environment": resolved_env,
                 "auto_remove": False
             }
 
@@ -219,7 +225,7 @@ class DockerManager:
                 "image_name": image_name,
                 "exposed_port": exposed_port,
                 "host_port": host_port,
-                "url": f"http://localhost:{host_port}",
+                "url": f"http://{self.public_host}:{host_port}",
                 "status": "running",
                 "created_at": created_at,
                 "container": container,
@@ -237,7 +243,7 @@ class DockerManager:
                 "image_name": image_name,
                 "host_port": host_port,
                 "exposed_port": exposed_port,
-                "url": f"http://localhost:{host_port}",
+                "url": f"http://{self.public_host}:{host_port}",
                 "status": "running",
                 "created_at": created_at
             }

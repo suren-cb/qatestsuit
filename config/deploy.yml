@@ -39,6 +39,7 @@ env:
     ENVIRONMENT: prod
     HOST: 0.0.0.0
     PORT: "8085"
+    PUBLIC_HOST: 64.227.97.224
     DOCKER_HOST: unix:///var/run/docker.sock
     MAX_CONTAINERS: "10"
     CONTAINER_TIMEOUT_SECONDS: "3600"

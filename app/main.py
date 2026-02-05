@@ -74,7 +74,8 @@ async def lifespan(app: FastAPI):
     # Startup
     print("Starting QA Docker Test Manager...")
     docker_manager = DockerManager(
-        docker_host=os.getenv("DOCKER_HOST", "unix:///var/run/docker.sock")
+        docker_host=os.getenv("DOCKER_HOST", "unix:///var/run/docker.sock"),
+        public_host=os.getenv("PUBLIC_HOST", "localhost")
     )
     docker_manager.set_max_containers(int(os.getenv("MAX_CONTAINERS", "10")))
 

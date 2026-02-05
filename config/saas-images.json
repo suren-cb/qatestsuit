@@ -14,7 +14,7 @@
         "DB_PASSWD=prestashop_pass",
         "PS_INSTALL_AUTO=1",
         "PS_DEV_MODE=0",
-        "PS_DOMAIN=localhost:8086",
+        "PS_DOMAIN={PUBLIC_HOST}:8086",
         "PS_FOLDER_ADMIN=admin",
         "PS_FOLDER_INSTALL=install",
         "ADMIN_MAIL=admin@prestashop.com",
