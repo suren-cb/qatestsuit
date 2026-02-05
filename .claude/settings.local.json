@@ -25,7 +25,8 @@
       "Bash(docker stop:*)",
       "Bash(docker logs:*)",
       "Bash(docker rm:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
