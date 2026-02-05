@@ -29,9 +29,9 @@ docker_manager: DockerManager = None
 image_registry: ImageRegistry = None
 start_time = time.time()
 
-# Basic Auth credentials from environment
-BASIC_AUTH_USERNAME = os.getenv("BASIC_AUTH_USERNAME", "qatestsuit")
-BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD", "d09r5uBDo7o3cq3C")
+# Basic Auth credentials from environment (use `or` to handle empty strings)
+BASIC_AUTH_USERNAME = os.getenv("BASIC_AUTH_USERNAME") or "qatestsuit"
+BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD") or "d09r5uBDo7o3cq3C"
 
 
 def verify_basic_auth(request: Request):

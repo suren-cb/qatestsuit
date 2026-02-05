@@ -25,7 +25,6 @@ wheels/
 
 # uv
 .venv/
-uv.lock
 
 # Node.js (from previous implementation)
 node_modules/
