@@ -39,7 +39,13 @@
       "WebFetch(domain:centrifugal.dev)",
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_snapshot",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_type",
+      "Bash(pip show:*)",
+      "Bash(pip3 show:*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_select_option"
     ],
     "deny": [],
     "ask": []

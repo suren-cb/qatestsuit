@@ -8,6 +8,9 @@ import secrets
 import base64
 from datetime import datetime
 import time
+import json as json_module
+import asyncio
+import urllib.request
 
 from app.docker_manager import DockerManager
 from app.registry import ImageRegistry
@@ -417,6 +420,47 @@ async def pull_image_dependencies(image_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== PROXY ENDPOINT =====
+
+@app.post("/api/proxy/{identifier}/{path:path}")
+async def proxy_request(identifier: str, path: str, request: Request):
+    """Proxy HTTP requests to a running container (avoids CORS issues for browser clients).
+    Accepts either instance_id or image_id as identifier."""
+    try:
+        # Try as instance_id first, then fall back to image_id lookup
+        container_status = None
+        try:
+            container_status = await docker_manager.get_container_status(identifier)
+        except Exception:
+            # Fall back: find container by image_id
+            containers = await docker_manager.list_containers()
+            for c in containers:
+                if c.get("image_id") == identifier:
+                    container_status = c
+                    break
+
+        if not container_status:
+            raise HTTPException(status_code=404, detail=f"No running container found for '{identifier}'")
+
+        target_url = f"{container_status['url']}/{path}"
+        body = await request.body()
+
+        def do_request():
+            req = urllib.request.Request(
+                target_url, data=body, method="POST",
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json_module.loads(resp.read())
+
+        result = await asyncio.to_thread(do_request)
+        return JSONResponse(content=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 # ===== DASHBOARD UI =====

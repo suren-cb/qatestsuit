@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centrifugo Visual Test Client</title>
+  <script src="https://unpkg.com/centrifuge@5/dist/centrifuge.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { background: #1e293b; border-bottom: 1px solid #334155; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 18px; font-weight: 600; } header h1 span { color: #38bdf8; }
+    .container { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 52px); }
+    .sidebar { background: #1e293b; border-right: 1px solid #334155; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    .panel { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; }
+    .panel h3 { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 7px 10px; border-radius: 5px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 13px; outline: none; margin-bottom: 8px; }
+    input:focus, select:focus, textarea:focus { border-color: #38bdf8; }
+    textarea { resize: vertical; min-height: 60px; font-family: monospace; font-size: 12px; }
+    .btn { padding: 7px 14px; border-radius: 5px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #2563eb; color: #fff; } .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-success { background: #059669; color: #fff; } .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-danger { background: #dc2626; color: #fff; } .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+    .btn-warning { background: #d97706; color: #fff; } .btn-warning:hover:not(:disabled) { background: #b45309; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .main-area { display: flex; flex-direction: column; }
+    .tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; }
+    .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: #94a3b8; }
+    .tab:hover { color: #e2e8f0; }
+    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+    .tab-content { flex: 1; overflow-y: auto; padding: 16px; }
+    .tab-panel { display: none; } .tab-panel.active { display: block; }
+    .log-area { font-family: monospace; font-size: 12px; line-height: 1.6; }
+    .log-entry { padding: 4px 8px; border-radius: 4px; margin-bottom: 3px; word-break: break-all; }
+    .log-info { background: #1e3a5f; color: #93c5fd; }
+    .log-success { background: #064e3b; color: #6ee7b7; }
+    .log-error { background: #7f1d1d; color: #fca5a5; }
+    .log-msg { background: #312e81; color: #c4b5fd; }
+    .log-send { background: #3b2f0a; color: #fcd34d; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .status-dot.connected { background: #10b981; } .status-dot.disconnected { background: #ef4444; } .status-dot.connecting { background: #f59e0b; }
+    .status-bar { padding: 8px 16px; background: #1e293b; font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 16px; border-top: 1px solid #334155; }
+    .chat-area { flex: 1; display: flex; flex-direction: column; }
+    .messages { flex: 1; overflow-y: auto; padding: 12px; }
+    .message { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
+    .message .meta { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+    .message .body { font-size: 13px; color: #e2e8f0; }
+    .chat-input { display: flex; gap: 8px; padding: 12px; background: #1e293b; border-top: 1px solid #334155; }
+    .chat-input input { flex: 1; margin-bottom: 0; }
+    .presence-list { font-size: 13px; }
+    .presence-item { background: #1e293b; padding: 8px 12px; border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .empty { color: #64748b; font-size: 13px; font-style: italic; padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>Centrifugo</span> Visual Test Client</h1>
+  <div id="conn-status" style="font-size:13px;display:flex;align-items:center;">
+    <span class="status-dot disconnected" id="status-dot"></span>
+    <span id="status-text">Disconnected</span>
+  </div>
+</header>
+
+<div class="container">
+  <div class="sidebar">
+    <!-- Connection Panel -->
+    <div class="panel">
+      <h3>Connection</h3>
+      <label>Server URL</label>
+      <input type="text" id="server-url" value="ws://localhost:8089/connection/websocket">
+      <label>Transport</label>
+      <select id="transport">
+        <option value="websocket" selected>WebSocket</option>
+        <option value="http_stream">HTTP-Streaming</option>
+        <option value="sse">SSE (Server-Sent Events)</option>
+        <option value="webtransport">WebTransport</option>
+      </select>
+      <label>User Name (display)</label>
+      <input type="text" id="username" value="tester" placeholder="Your display name">
+      <div class="btn-row">
+        <button class="btn btn-success" id="btn-connect" onclick="doConnect()">Connect</button>
+        <button class="btn btn-danger" id="btn-disconnect" onclick="doDisconnect()" disabled>Disconnect</button>
+      </div>
+    </div>
+
+    <!-- Subscribe Panel -->
+    <div class="panel">
+      <h3>Subscribe</h3>
+      <label>Channel</label>
+      <input type="text" id="sub-channel" value="chat" placeholder="Channel name">
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-subscribe" onclick="doSubscribe()" disabled>Subscribe</button>
+        <button class="btn btn-warning" id="btn-unsubscribe" onclick="doUnsubscribe()" disabled>Unsubscribe</button>
+      </div>
+      <div style="margin-top:8px;">
+        <label>Active Subscriptions</label>
+        <div id="active-subs" style="font-size:12px;color:#64748b;">None</div>
+      </div>
+    </div>
+
+    <!-- Publish Panel -->
+    <div class="panel">
+      <h3>Publish</h3>
+      <label>Channel</label>
+      <input type="text" id="pub-channel" value="chat" placeholder="Channel name">
+      <label>JSON Data</label>
+      <textarea id="pub-data" placeholder='{"text": "Hello!"}'></textarea>
+      <button class="btn btn-primary" id="btn-publish" onclick="doPublish()" disabled>Publish</button>
+    </div>
+
+    <!-- Server API Panel -->
+    <div class="panel">
+      <h3>Server HTTP API</h3>
+      <label>API URL</label>
+      <input type="text" id="api-url" value="/api/proxy/centrifugo/api">
+      <label>Method</label>
+      <select id="api-method">
+        <option value="info">Info</option>
+        <option value="publish">Publish</option>
+        <option value="channels">Channels</option>
+        <option value="presence">Presence</option>
+        <option value="presence_stats">Presence Stats</option>
+        <option value="history">History</option>
+        <option value="broadcast">Broadcast</option>
+        <option value="subscribe">Subscribe (server-side)</option>
+        <option value="unsubscribe">Unsubscribe (server-side)</option>
+        <option value="disconnect">Disconnect (server-side)</option>
+      </select>
+      <label>Params JSON</label>
+      <textarea id="api-params" placeholder='{"channel": "chat"}'>{}</textarea>
+      <button class="btn btn-primary" onclick="doApiCall()">Execute</button>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="tabs">
+      <div class="tab active" data-tab="messages" onclick="switchTab('messages')">Messages</div>
+      <div class="tab" data-tab="presence" onclick="switchTab('presence')">Presence</div>
+      <div class="tab" data-tab="logs" onclick="switchTab('logs')">Connection Log</div>
+      <div class="tab" data-tab="api-log" onclick="switchTab('api-log')">API Log</div>
+    </div>
+
+    <div class="tab-content">
+      <!-- Messages Tab -->
+      <div class="tab-panel active" id="panel-messages">
+        <div class="chat-area">
+          <div class="messages" id="messages-list">
+            <div class="empty">Subscribe to a channel and send messages to see them here.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Presence Tab -->
+      <div class="tab-panel" id="panel-presence">
+        <div style="margin-bottom:12px;">
+          <button class="btn btn-primary" onclick="doPresence()">Refresh Presence</button>
+        </div>
+        <div class="presence-list" id="presence-list">
+          <div class="empty">Click "Refresh Presence" to see who is in the channel.</div>
+        </div>
+      </div>
+
+      <!-- Connection Log Tab -->
+      <div class="tab-panel" id="panel-logs">
+        <div class="log-area" id="conn-log"></div>
+      </div>
+
+      <!-- API Log Tab -->
+      <div class="tab-panel" id="panel-api-log">
+        <div class="log-area" id="api-log"></div>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input">
+      <input type="text" id="chat-msg" placeholder="Type a message and press Enter..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn btn-primary" onclick="sendChat()">Send</button>
+    </div>
+
+    <div class="status-bar">
+      <span>Transport: <strong id="active-transport">-</strong></span>
+      <span>Client ID: <strong id="client-id">-</strong></span>
+      <span>Latency: <strong id="latency">-</strong></span>
+    </div>
+  </div>
+</div>
+
+<script>
+let centrifuge = null;
+let subscriptions = {};
+let clientId = '';
+let centrifugoInstanceId = '';
+
+// Auto-discover running Centrifugo container and set proxy API URL
+(async function() {
+  try {
+    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    const res = await fetch(`${baseUrl}/api/containers`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && data.data.containers) {
+      const c = data.data.containers.find(x => x.image_id === 'centrifugo');
+      if (c) {
+        centrifugoInstanceId = c.instance_id;
+        document.getElementById('api-url').value = `/api/proxy/${c.instance_id}/api`;
+      }
+    }
+  } catch(e) { /* ignore, user can set URL manually */ }
+})();
+
+function ts() { return new Date().toLocaleTimeString(); }
+
+function connLog(msg, type = 'info') {
+  const el = document.getElementById('conn-log');
+  el.innerHTML = `<div class="log-entry log-${type}">[${ts()}] ${escHtml(msg)}</div>` + el.innerHTML;
+}
+
+function apiLog(msg, type = 'info') {
+  const el = document.getElementById('api-log');
+  el.innerHTML = `<div class="log-entry log-${type}">[${ts()}] ${escHtml(msg)}</div>` + el.innerHTML;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot ' + state;
+  txt.textContent = text;
+}
+
+function setButtons(connected) {
+  document.getElementById('btn-connect').disabled = connected;
+  document.getElementById('btn-disconnect').disabled = !connected;
+  document.getElementById('btn-subscribe').disabled = !connected;
+  document.getElementById('btn-publish').disabled = !connected;
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+function updateSubsList() {
+  const el = document.getElementById('active-subs');
+  const names = Object.keys(subscriptions);
+  if (names.length === 0) {
+    el.innerHTML = 'None';
+    document.getElementById('btn-unsubscribe').disabled = true;
+  } else {
+    el.innerHTML = names.map(n => `<span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:4px;margin-right:4px;">${escHtml(n)}</span>`).join('');
+    document.getElementById('btn-unsubscribe').disabled = false;
+  }
+}
+
+function addMessage(channel, data, info) {
+  const list = document.getElementById('messages-list');
+  if (list.querySelector('.empty')) list.innerHTML = '';
+  const user = (data && data.user) || (info && info.user) || 'unknown';
+  const text = (data && data.text) || JSON.stringify(data);
+  const div = document.createElement('div');
+  div.className = 'message';
+  div.innerHTML = `<div class="meta">${escHtml(channel)} &middot; ${escHtml(user)} &middot; ${ts()}</div><div class="body">${escHtml(text)}</div>`;
+  list.appendChild(div);
+  list.scrollTop = list.scrollHeight;
+}
+
+function getTransportConfig() {
+  const transport = document.getElementById('transport').value;
+  const serverUrl = document.getElementById('server-url').value;
+  switch (transport) {
+    case 'websocket':
+      return [{ transport: 'websocket', endpoint: serverUrl }];
+    case 'http_stream':
+      return [{ transport: 'http_stream', endpoint: serverUrl }];
+    case 'sse':
+      return [{ transport: 'sse', endpoint: serverUrl }];
+    case 'webtransport':
+      return [{ transport: 'webtransport', endpoint: serverUrl }];
+    default:
+      return [{ transport: 'websocket', endpoint: serverUrl }];
+  }
+}
+
+// Auto-update URL when transport changes
+document.getElementById('transport').addEventListener('change', function() {
+  const base = 'localhost:8089';
+  const urlInput = document.getElementById('server-url');
+  switch (this.value) {
+    case 'websocket':
+      urlInput.value = `ws://${base}/connection/websocket`;
+      break;
+    case 'http_stream':
+      urlInput.value = `http://${base}/connection/http_stream`;
+      break;
+    case 'sse':
+      urlInput.value = `http://${base}/connection/sse`;
+      break;
+    case 'webtransport':
+      urlInput.value = `https://${base}/connection/webtransport`;
+      break;
+  }
+});
+
+function doConnect() {
+  const transport = document.getElementById('transport').value;
+  const serverUrl = document.getElementById('server-url').value;
+  const username = document.getElementById('username').value || 'tester';
+
+  connLog(`Connecting via ${transport.toUpperCase()} to ${serverUrl}...`);
+  setStatus('connecting', 'Connecting...');
+
+  const transportConfig = getTransportConfig();
+
+  centrifuge = new Centrifuge(transportConfig, {
+    data: { name: username }
+  });
+
+  centrifuge.on('connecting', function(ctx) {
+    setStatus('connecting', 'Connecting...');
+    connLog(`Connecting: code=${ctx.code}, reason=${ctx.reason}`);
+  });
+
+  centrifuge.on('connected', function(ctx) {
+    clientId = ctx.client || '';
+    setStatus('connected', 'Connected');
+    setButtons(true);
+    document.getElementById('active-transport').textContent = ctx.transport || transport;
+    document.getElementById('client-id').textContent = clientId;
+    connLog(`Connected! client=${clientId}, transport=${ctx.transport}`, 'success');
+  });
+
+  centrifuge.on('disconnected', function(ctx) {
+    setStatus('disconnected', 'Disconnected');
+    setButtons(false);
+    document.getElementById('active-transport').textContent = '-';
+    document.getElementById('client-id').textContent = '-';
+    connLog(`Disconnected: code=${ctx.code}, reason=${ctx.reason}`, 'error');
+  });
+
+  centrifuge.on('error', function(ctx) {
+    connLog(`Error: ${JSON.stringify(ctx)}`, 'error');
+  });
+
+  centrifuge.connect();
+}
+
+function doDisconnect() {
+  if (centrifuge) {
+    centrifuge.disconnect();
+    Object.keys(subscriptions).forEach(ch => {
+      delete subscriptions[ch];
+    });
+    updateSubsList();
+    connLog('Manually disconnected', 'error');
+  }
+}
+
+function doSubscribe() {
+  if (!centrifuge) return;
+  const channel = document.getElementById('sub-channel').value.trim();
+  if (!channel) return;
+  if (subscriptions[channel]) { connLog(`Already subscribed to ${channel}`, 'error'); return; }
+
+  connLog(`Subscribing to '${channel}'...`);
+  const sub = centrifuge.newSubscription(channel, {
+    data: { name: document.getElementById('username').value || 'tester' }
+  });
+
+  sub.on('subscribing', function(ctx) {
+    connLog(`Subscribing to ${channel}: code=${ctx.code}`, 'info');
+  });
+
+  sub.on('subscribed', function(ctx) {
+    connLog(`Subscribed to '${channel}' successfully`, 'success');
+    updateSubsList();
+  });
+
+  sub.on('unsubscribed', function(ctx) {
+    connLog(`Unsubscribed from '${channel}': code=${ctx.code}`, 'info');
+    delete subscriptions[channel];
+    updateSubsList();
+  });
+
+  sub.on('publication', function(ctx) {
+    connLog(`Message on '${channel}': ${JSON.stringify(ctx.data)}`, 'msg');
+    addMessage(channel, ctx.data, ctx.info);
+  });
+
+  sub.on('join', function(ctx) {
+    connLog(`Join '${channel}': client=${ctx.info.client}, user=${ctx.info.user}`, 'success');
+  });
+
+  sub.on('leave', function(ctx) {
+    connLog(`Leave '${channel}': client=${ctx.info.client}, user=${ctx.info.user}`, 'error');
+  });
+
+  sub.on('error', function(ctx) {
+    connLog(`Subscription error on '${channel}': ${JSON.stringify(ctx)}`, 'error');
+  });
+
+  sub.subscribe();
+  subscriptions[channel] = sub;
+  updateSubsList();
+}
+
+function doUnsubscribe() {
+  const channel = document.getElementById('sub-channel').value.trim();
+  if (subscriptions[channel]) {
+    subscriptions[channel].unsubscribe();
+    centrifuge.removeSubscription(subscriptions[channel]);
+    delete subscriptions[channel];
+    updateSubsList();
+    connLog(`Unsubscribed from '${channel}'`, 'info');
+  }
+}
+
+function doPublish() {
+  const channel = document.getElementById('pub-channel').value.trim();
+  const dataStr = document.getElementById('pub-data').value.trim();
+  if (!channel || !centrifuge) return;
+
+  let data;
+  try {
+    data = dataStr ? JSON.parse(dataStr) : {};
+  } catch (e) {
+    connLog(`Invalid JSON: ${e.message}`, 'error');
+    return;
+  }
+
+  const sub = subscriptions[channel];
+  if (sub) {
+    sub.publish(data).then(function() {
+      connLog(`Published to '${channel}' via subscription: ${JSON.stringify(data)}`, 'send');
+    }, function(err) {
+      connLog(`Publish error: ${err.message}`, 'error');
+    });
+  } else {
+    connLog(`Not subscribed to '${channel}'. Use the Server HTTP API panel to publish via server-side API.`, 'error');
+  }
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-msg');
+  const text = input.value.trim();
+  if (!text) return;
+  const channel = document.getElementById('sub-channel').value.trim() || 'chat';
+  const username = document.getElementById('username').value || 'tester';
+  const data = { text: text, user: username };
+
+  const sub = subscriptions[channel];
+  if (sub) {
+    sub.publish(data).then(function() {
+      connLog(`Chat sent to '${channel}': ${text}`, 'send');
+    }, function(err) {
+      connLog(`Send error: ${err.message}`, 'error');
+    });
+  } else {
+    connLog(`Not subscribed to '${channel}'. Subscribe first.`, 'error');
+  }
+  input.value = '';
+}
+
+function doPresence() {
+  const channel = document.getElementById('sub-channel').value.trim();
+  const sub = subscriptions[channel];
+  const list = document.getElementById('presence-list');
+  if (!sub) { list.innerHTML = '<div class="empty">Not subscribed to this channel.</div>'; return; }
+
+  sub.presence().then(function(ctx) {
+    const clients = Object.values(ctx.clients || {});
+    if (clients.length === 0) {
+      list.innerHTML = '<div class="empty">No clients present in this channel.</div>';
+    } else {
+      list.innerHTML = clients.map(c =>
+        `<div class="presence-item"><span>Client: ${escHtml(c.client)}</span><span>User: ${escHtml(c.user || '-')}</span></div>`
+      ).join('');
+    }
+    connLog(`Presence for '${channel}': ${clients.length} client(s)`, 'success');
+  }, function(err) {
+    list.innerHTML = `<div class="empty">Presence error: ${escHtml(err.message)}</div>`;
+    connLog(`Presence error: ${err.message}`, 'error');
+  });
+}
+
+async function doApiCall() {
+  const url = document.getElementById('api-url').value;
+  const method = document.getElementById('api-method').value;
+  let params;
+  try {
+    params = JSON.parse(document.getElementById('api-params').value || '{}');
+  } catch(e) {
+    apiLog(`Invalid JSON params: ${e.message}`, 'error');
+    return;
+  }
+
+  const body = { method, params };
+  apiLog(`Request: ${JSON.stringify(body)}`, 'send');
+
+  try {
+    // Build absolute URL without credentials to avoid fetch() credential-in-URL error
+    let fetchUrl = url;
+    if (url.startsWith('/')) {
+      fetchUrl = `${window.location.protocol}//${window.location.host}${url}`;
+    }
+    const res = await fetch(fetchUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.error) {
+      apiLog(`Error: ${JSON.stringify(data.error)}`, 'error');
+    } else {
+      apiLog(`Response OK: ${JSON.stringify(data.result || data)}`, 'success');
+    }
+  } catch(e) {
+    apiLog(`Fetch error: ${e.message}`, 'error');
+  }
+}
+
+// Prefill API params based on method selection
+document.getElementById('api-method').addEventListener('change', function() {
+  const params = document.getElementById('api-params');
+  switch (this.value) {
+    case 'info': params.value = '{}'; break;
+    case 'channels': params.value = '{}'; break;
+    case 'publish': params.value = '{"channel": "chat", "data": {"text": "Hello from API!", "user": "admin"}}'; break;
+    case 'broadcast': params.value = '{"channels": ["chat", "news"], "data": {"text": "Broadcast!"}}'; break;
+    case 'presence': params.value = '{"channel": "chat"}'; break;
+    case 'presence_stats': params.value = '{"channel": "chat"}'; break;
+    case 'history': params.value = '{"channel": "chat"}'; break;
+    case 'subscribe': params.value = '{"user": "test-user", "channel": "chat"}'; break;
+    case 'unsubscribe': params.value = '{"user": "test-user", "channel": "chat"}'; break;
+    case 'disconnect': params.value = '{"user": "test-user"}'; break;
+  }
+});
+</script>
+
+</body>
+</html>

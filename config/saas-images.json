@@ -86,7 +86,8 @@
         "CENTRIFUGO_HTTP_STREAM_ENABLED=true",
         "CENTRIFUGO_UNI_SSE_ENABLED=true",
         "CENTRIFUGO_UNI_HTTP_STREAM_ENABLED=true",
-        "CENTRIFUGO_GRPC_API_ENABLED=true"
+        "CENTRIFUGO_GRPC_API_ENABLED=true",
+        "CENTRIFUGO_CLIENT_ALLOWED_ORIGINS=*"
       ],
       "waitTime": 5000,
       "healthCheck": "/"
