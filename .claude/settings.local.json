@@ -45,7 +45,13 @@
       "Bash(pip show:*)",
       "Bash(pip3 show:*)",
       "mcp__playwright__browser_evaluate",
-      "mcp__playwright__browser_select_option"
+      "mcp__playwright__browser_select_option",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_network_requests",
+      "Bash(lsof:*)",
+      "Bash(ps:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

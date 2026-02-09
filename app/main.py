@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from contextlib import asynccontextmanager
 import os
 import secrets
@@ -11,6 +11,7 @@ import time
 import json as json_module
 import asyncio
 import urllib.request
+import urllib.error
 
 from app.docker_manager import DockerManager
 from app.registry import ImageRegistry
@@ -129,6 +130,10 @@ async def basic_auth_middleware(request: Request, call_next):
     """Enforce HTTP Basic Auth on every request"""
     # Allow CORS preflight through
     if request.method == "OPTIONS":
+        return await call_next(request)
+
+    # Allow emulation endpoint without auth (used by centrifuge-js fetch from browser)
+    if request.url.path == "/emulation":
         return await call_next(request)
 
     user = verify_basic_auth(request)
@@ -457,6 +462,39 @@ async def proxy_request(identifier: str, path: str, request: Request):
 
         result = await asyncio.to_thread(do_request)
         return JSONResponse(content=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/emulation")
+async def emulation_proxy(request: Request):
+    """Proxy emulation requests to the centrifugo container.
+    Used by centrifuge-js for SSE/HTTP-Streaming bidirectional communication."""
+    try:
+        # Look up centrifugo host port from image registry
+        image = image_registry.get_image("centrifugo") if image_registry else None
+        if not image or not image.host_port:
+            raise HTTPException(status_code=404, detail="Centrifugo image not found in registry")
+
+        target_url = f"http://localhost:{image.host_port}/emulation"
+        body = await request.body()
+        content_type = request.headers.get("content-type", "application/octet-stream")
+
+        def do_request():
+            req = urllib.request.Request(
+                target_url, data=body, method="POST",
+                headers={"Content-Type": content_type}
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    return resp.read(), resp.headers.get("Content-Type", "application/octet-stream"), resp.status
+            except urllib.error.HTTPError as e:
+                return e.read(), e.headers.get("Content-Type", "application/octet-stream"), e.code
+
+        resp_body, resp_content_type, resp_status = await asyncio.to_thread(do_request)
+        return Response(content=resp_body, media_type=resp_content_type, status_code=resp_status)
     except HTTPException:
         raise
     except Exception as e:
