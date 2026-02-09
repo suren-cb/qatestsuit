@@ -26,7 +26,20 @@
       "Bash(docker logs:*)",
       "Bash(docker rm:*)",
       "Bash(ssh:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && grep -l \"\"\"\"focalboard\\\\|Focalboard\"\"\"\" {}')",
+      "Bash(docker exec:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_close",
+      "Bash(docker pull:*)",
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:centrifugal.dev)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

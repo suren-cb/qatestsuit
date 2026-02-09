@@ -295,6 +295,10 @@ async def start_container(request: StartContainerRequest):
             entrypoint=image.entrypoint
         )
 
+        # Include credentials if available
+        if image.credentials:
+            container_info["credentials"] = image.credentials
+
         return StartContainerResponse(
             success=True,
             data=ContainerInfo(**container_info)

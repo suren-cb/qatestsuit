@@ -60,24 +60,36 @@
       "hostPort": 8088,
       "description": "Open-source task and project management tool with board, table, and calendar views",
       "env": [],
-      "waitTime": 10000,
+      "entrypoint": ["bash", "-c"],
+      "command": ["/opt/focalboard/bin/focalboard-server & sleep 5; exec 3<>/dev/tcp/localhost/8000 && printf 'POST /api/v2/register HTTP/1.1\\r\\nHost: localhost:8000\\r\\nContent-Type: application/json\\r\\nX-Requested-With: XMLHttpRequest\\r\\nContent-Length: 72\\r\\nConnection: close\\r\\n\\r\\n{\"username\":\"admin\",\"email\":\"admin@test.com\",\"password\":\"admin12345678\"}' >&3 && cat <&3 && exec 3>&-; wait"],
+      "credentials": {"username": "admin", "password": "admin12345678"},
+      "waitTime": 15000,
       "healthCheck": "/"
     },
     {
       "id": "centrifugo",
       "name": "Centrifugo",
-      "imageName": "centrifugal/centrifugo:v6",
+      "imageName": "centrifugo/centrifugo:v6",
       "exposedPort": 8000,
       "hostPort": 8089,
       "description": "Real-time messaging server supporting WebSocket, SSE, HTTP-streaming, and gRPC",
       "env": [
-        "CENTRIFUGO_ADMIN=true",
+        "CENTRIFUGO_ADMIN_ENABLED=true",
         "CENTRIFUGO_ADMIN_INSECURE=true",
         "CENTRIFUGO_CLIENT_INSECURE=true",
-        "CENTRIFUGO_ALLOW_SUBSCRIBE_FOR_CLIENT=true"
+        "CENTRIFUGO_HTTP_API_INSECURE=true",
+        "CENTRIFUGO_CHANNEL_WITHOUT_NAMESPACE_ALLOW_SUBSCRIBE_FOR_CLIENT=true",
+        "CENTRIFUGO_CHANNEL_WITHOUT_NAMESPACE_ALLOW_PUBLISH_FOR_SUBSCRIBER=true",
+        "CENTRIFUGO_CHANNEL_WITHOUT_NAMESPACE_ALLOW_PRESENCE_FOR_SUBSCRIBER=true",
+        "CENTRIFUGO_CHANNEL_WITHOUT_NAMESPACE_ALLOW_HISTORY_FOR_SUBSCRIBER=true",
+        "CENTRIFUGO_SSE_ENABLED=true",
+        "CENTRIFUGO_HTTP_STREAM_ENABLED=true",
+        "CENTRIFUGO_UNI_SSE_ENABLED=true",
+        "CENTRIFUGO_UNI_HTTP_STREAM_ENABLED=true",
+        "CENTRIFUGO_GRPC_API_ENABLED=true"
       ],
       "waitTime": 5000,
-      "healthCheck": "/health"
+      "healthCheck": "/"
     }
   ]
 }

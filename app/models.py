@@ -59,6 +59,7 @@ class ContainerInfo(BaseModel):
     status: str
     created_at: str
     uptime: Optional[str] = None
+    credentials: Optional[Dict] = Field(None, description="Default login credentials for the application")
 
 
 class StartContainerResponse(BaseModel):

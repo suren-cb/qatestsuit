@@ -498,6 +498,9 @@ function render() {
           <span>Port: ${svc.host_port || svc.exposed_port}</span>
           ${deps > 0 ? `<span>Deps: ${deps}</span>` : ''}
         </div>
+        ${svc.credentials ? `<div class="card-meta" style="color:#94a3b8;">
+          <span>Login: <strong style="color:#e2e8f0;">${svc.credentials.username}</strong> / <strong style="color:#e2e8f0;">${svc.credentials.password}</strong></span>
+        </div>` : ''}
         <div class="card-actions">
           ${isRunning ? `
             <button class="btn btn-stop" onclick="stopService('${svc.image_id}')" ${isBusy ? 'disabled' : ''}>
