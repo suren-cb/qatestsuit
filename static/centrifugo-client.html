@@ -193,6 +193,7 @@ let centrifuge = null;
 let subscriptions = {};
 let clientId = '';
 let centrifugoInstanceId = '';
+let activeTransport = 'websocket';
 
 // Auto-discover running Centrifugo container and set proxy API URL
 (async function() {
@@ -269,6 +270,30 @@ function addMessage(channel, data, info) {
   list.scrollTop = list.scrollHeight;
 }
 
+// Publish via Server HTTP API - used for SSE/HTTP-Stream transports where
+// client-side publish via emulation produces empty SSE events in Centrifugo v6.
+async function publishViaApi(channel, data) {
+  const apiUrl = document.getElementById('api-url').value;
+  if (!apiUrl) throw new Error('API URL not configured');
+  let fetchUrl = apiUrl;
+  if (apiUrl.startsWith('/')) {
+    fetchUrl = `${window.location.protocol}//${window.location.host}${apiUrl}`;
+  }
+  const res = await fetch(fetchUrl, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method: 'publish', params: { channel, data } })
+  });
+  const result = await res.json();
+  if (result.error) throw new Error(result.error.message || JSON.stringify(result.error));
+  return result;
+}
+
+function needsApiPublish() {
+  return activeTransport === 'sse' || activeTransport === 'http_stream';
+}
+
 function getTransportConfig() {
   const transport = document.getElementById('transport').value;
   const serverUrl = document.getElementById('server-url').value;
@@ -311,14 +336,30 @@ function doConnect() {
   const serverUrl = document.getElementById('server-url').value;
   const username = document.getElementById('username').value || 'tester';
 
+  activeTransport = transport;
   connLog(`Connecting via ${transport.toUpperCase()} to ${serverUrl}...`);
   setStatus('connecting', 'Connecting...');
 
   const transportConfig = getTransportConfig();
 
-  centrifuge = new Centrifuge(transportConfig, {
-    data: { name: username }
-  });
+  const options = { data: { name: username } };
+
+  // For SSE and HTTP-Stream transports, configure the emulation endpoint.
+  // These unidirectional transports use bidirectional emulation: the browser receives
+  // data via SSE/streaming, but sends commands (subscribe, publish) via HTTP POST
+  // to the /emulation endpoint. Point it directly to Centrifugo (same origin as
+  // the transport connection) so the session/node routing works correctly.
+  if (transport === 'sse' || transport === 'http_stream') {
+    try {
+      const url = new URL(serverUrl);
+      options.emulationEndpoint = `${url.origin}/emulation`;
+    } catch (e) {
+      // Fallback: derive from hostname
+      options.emulationEndpoint = `http://localhost:8089/emulation`;
+    }
+  }
+
+  centrifuge = new Centrifuge(transportConfig, options);
 
   centrifuge.on('connecting', function(ctx) {
     setStatus('connecting', 'Connecting...');
@@ -432,15 +473,23 @@ function doPublish() {
     return;
   }
 
-  const sub = subscriptions[channel];
-  if (sub) {
-    sub.publish(data).then(function() {
-      connLog(`Published to '${channel}' via subscription: ${JSON.stringify(data)}`, 'send');
+  if (needsApiPublish()) {
+    publishViaApi(channel, data).then(function() {
+      connLog(`Published to '${channel}' via server API: ${JSON.stringify(data)}`, 'send');
     }, function(err) {
       connLog(`Publish error: ${err.message}`, 'error');
     });
   } else {
-    connLog(`Not subscribed to '${channel}'. Use the Server HTTP API panel to publish via server-side API.`, 'error');
+    const sub = subscriptions[channel];
+    if (sub) {
+      sub.publish(data).then(function() {
+        connLog(`Published to '${channel}' via subscription: ${JSON.stringify(data)}`, 'send');
+      }, function(err) {
+        connLog(`Publish error: ${err.message}`, 'error');
+      });
+    } else {
+      connLog(`Not subscribed to '${channel}'. Use the Server HTTP API panel to publish via server-side API.`, 'error');
+    }
   }
 }
 
@@ -452,15 +501,23 @@ function sendChat() {
   const username = document.getElementById('username').value || 'tester';
   const data = { text: text, user: username };
 
-  const sub = subscriptions[channel];
-  if (sub) {
-    sub.publish(data).then(function() {
+  if (needsApiPublish()) {
+    publishViaApi(channel, data).then(function() {
       connLog(`Chat sent to '${channel}': ${text}`, 'send');
     }, function(err) {
       connLog(`Send error: ${err.message}`, 'error');
     });
   } else {
-    connLog(`Not subscribed to '${channel}'. Subscribe first.`, 'error');
+    const sub = subscriptions[channel];
+    if (sub) {
+      sub.publish(data).then(function() {
+        connLog(`Chat sent to '${channel}': ${text}`, 'send');
+      }, function(err) {
+        connLog(`Send error: ${err.message}`, 'error');
+      });
+    } else {
+      connLog(`Not subscribed to '${channel}'. Subscribe first.`, 'error');
+    }
   }
   input.value = '';
 }
