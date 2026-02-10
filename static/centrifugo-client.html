@@ -70,7 +70,7 @@
     <div class="panel">
       <h3>Connection</h3>
       <label>Server URL</label>
-      <input type="text" id="server-url" value="ws://localhost:8089/connection/websocket">
+      <input type="text" id="server-url" value="">
       <label>Transport</label>
       <select id="transport">
         <option value="websocket" selected>WebSocket</option>
@@ -311,24 +311,33 @@ function getTransportConfig() {
   }
 }
 
-// Auto-update URL when transport changes
-document.getElementById('transport').addEventListener('change', function() {
-  const base = 'localhost:8089';
+// Derive centrifugo host from the current page's hostname (works in local + prod)
+const centrifugoHost = window.location.hostname + ':8089';
+
+function setTransportUrl(transport) {
   const urlInput = document.getElementById('server-url');
-  switch (this.value) {
+  switch (transport) {
     case 'websocket':
-      urlInput.value = `ws://${base}/connection/websocket`;
+      urlInput.value = `ws://${centrifugoHost}/connection/websocket`;
       break;
     case 'http_stream':
-      urlInput.value = `http://${base}/connection/http_stream`;
+      urlInput.value = `http://${centrifugoHost}/connection/http_stream`;
       break;
     case 'sse':
-      urlInput.value = `http://${base}/connection/sse`;
+      urlInput.value = `http://${centrifugoHost}/connection/sse`;
       break;
     case 'webtransport':
-      urlInput.value = `https://${base}/connection/webtransport`;
+      urlInput.value = `https://${centrifugoHost}/connection/webtransport`;
       break;
   }
+}
+
+// Set default URL on page load
+setTransportUrl('websocket');
+
+// Auto-update URL when transport changes
+document.getElementById('transport').addEventListener('change', function() {
+  setTransportUrl(this.value);
 });
 
 function doConnect() {
@@ -355,7 +364,7 @@ function doConnect() {
       options.emulationEndpoint = `${url.origin}/emulation`;
     } catch (e) {
       // Fallback: derive from hostname
-      options.emulationEndpoint = `http://localhost:8089/emulation`;
+      options.emulationEndpoint = `http://${centrifugoHost}/emulation`;
     }
   }
 
