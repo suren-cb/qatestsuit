@@ -141,8 +141,8 @@ async def basic_auth_middleware(request: Request, call_next):
     if request.url.path == "/emulation":
         return await call_next(request)
 
-    # Allow centrifugo client page without auth
-    if request.url.path == "/static/centrifugo-client.html":
+    # Allow centrifugo client page and its API dependencies without auth
+    if request.url.path in ("/static/centrifugo-client.html", "/api/containers"):
         return await call_next(request)
 
     user = verify_basic_auth(request)
