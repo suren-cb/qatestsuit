@@ -15,6 +15,7 @@ import urllib.error
 
 from app.docker_manager import DockerManager
 from app.registry import ImageRegistry
+from app.benchmark import init_db as init_benchmark_db, get_all_tests, generate_csv
 from app.models import (
     RegisterImageRequest,
     RegisterImageResponse,
@@ -92,6 +93,10 @@ async def lifespan(app: FastAPI):
     seeded = image_registry.seed_from_config(config_file)
     if seeded > 0:
         print(f"Seeded {seeded} preconfigured images from {config_file}")
+
+    # Initialize benchmark test cases DB
+    init_benchmark_db()
+    print("Benchmark test cases loaded into SQLite")
 
     print(f"Loaded {len(image_registry.list_images())} registered images")
     print(f"Basic Auth: {BASIC_AUTH_USERNAME} / {BASIC_AUTH_PASSWORD}")
@@ -499,6 +504,32 @@ async def emulation_proxy(request: Request):
         raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+# ===== BENCHMARK TEST SUITE ENDPOINTS =====
+
+@app.get("/api/benchmark/tests")
+async def list_benchmark_tests():
+    """List all benchmark test cases"""
+    tests = get_all_tests()
+    return {
+        "success": True,
+        "data": {
+            "count": len(tests),
+            "tests": tests
+        }
+    }
+
+
+@app.get("/api/benchmark/csv")
+async def export_benchmark_csv():
+    """Export all benchmark test cases as a CSV file"""
+    csv_content = generate_csv()
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=benchmark_test_cases.csv"}
+    )
 
 
 # ===== DASHBOARD UI =====

@@ -51,7 +51,8 @@
       "mcp__playwright__browser_network_requests",
       "Bash(lsof:*)",
       "Bash(ps:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
