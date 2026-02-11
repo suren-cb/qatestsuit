@@ -91,6 +91,32 @@
       ],
       "waitTime": 5000,
       "healthCheck": "/"
+    },
+    {
+      "id": "docuseal",
+      "name": "DocuSeal",
+      "imageName": "docuseal/docuseal:latest",
+      "exposedPort": 3000,
+      "hostPort": 8090,
+      "description": "Open-source document signing platform for testing e-signature workflows",
+      "credentials": {
+        "email": "admin@example.com",
+        "password": "admin12345678"
+      },
+      "env": [],
+      "waitTime": 15000,
+      "healthCheck": "/"
+    },
+    {
+      "id": "excalidraw",
+      "name": "Excalidraw",
+      "imageName": "excalidraw/excalidraw:latest",
+      "exposedPort": 80,
+      "hostPort": 8091,
+      "description": "Open-source whiteboard for drawing and diagramming (single-user in self-hosted mode)",
+      "env": [],
+      "waitTime": 10000,
+      "healthCheck": "/"
     }
   ]
 }
