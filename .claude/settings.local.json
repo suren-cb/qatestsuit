@@ -52,7 +52,12 @@
       "Bash(lsof:*)",
       "Bash(ps:*)",
       "Bash(xargs:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(docker manifest inspect:*)",
+      "Bash(docker tag:*)",
+      "Bash(docker images:*)",
+      "Bash(docker rmi:*)"
     ],
     "deny": [],
     "ask": []

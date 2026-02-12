@@ -117,6 +117,20 @@
       "env": [],
       "waitTime": 10000,
       "healthCheck": "/"
+    },
+    {
+      "id": "graphhopper",
+      "name": "GraphHopper",
+      "imageName": "israelhikingmap/graphhopper:latest",
+      "exposedPort": 8989,
+      "hostPort": 8092,
+      "description": "Open-source route planner with map navigation, distance calculation, and routing between locations using OpenStreetMap data",
+      "env": [
+        "JAVA_OPTS=-Xmx1g -Xms1g"
+      ],
+      "command": ["--url", "https://download.geofabrik.de/europe/andorra-latest.osm.pbf", "--host", "0.0.0.0"],
+      "waitTime": 60000,
+      "healthCheck": "/"
     }
   ]
 }

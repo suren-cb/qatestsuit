@@ -1,0 +1,55 @@
+{
+  "name": "GraphHopper - Map Navigation, Route Planning, and Distance Calculation",
+  "description": "Three focused test cases covering map interaction controls, route planning with distance verification, and multi-modal transport comparison using OpenStreetMap data for Andorra",
+  "baseUrl": "http://localhost:8092",
+  "testCases": [
+    {
+      "name": "Test Case 1: Map Interaction and Visual Controls",
+      "description": "Verify the map loads correctly and responds to zoom, pan, and right-click interactions",
+      "steps": [
+        "1. Navigate to http://localhost:8092/ in the browser and verify the GraphHopper Maps interface loads showing an interactive map of Andorra with a routing panel on the left containing input fields for start and destination",
+        "2. Click the zoom-in (+) button on the map controls three times and verify the map progressively zooms in, revealing more detailed streets, building outlines, and place labels for Andorra la Vella",
+        "3. Click and drag the map to pan northward towards Ordino and verify the map viewport shifts smoothly, loading new map tiles as the view moves",
+        "4. Use the mouse scroll wheel to zoom out until the entire country of Andorra is visible and verify all major towns (Andorra la Vella, Encamp, Canillo, Ordino, La Massana, Sant Julia) are labeled on the map",
+        "5. Double-click on the town of Encamp on the map and verify the map zooms into that location centering on the clicked point",
+        "6. Right-click on any location on the map and verify a context menu appears with options including 'Set as start' and 'Set as destination'",
+        "7. Click 'Set as start' from the context menu and verify a green marker is placed at that location and the start input field in the routing panel is populated with coordinates or an address",
+        "8. Right-click on a different location on the map and select 'Set as destination' and verify a red marker appears at the second location and a route line is drawn connecting the two points",
+        "9. Verify the bottom or side panel displays the calculated route distance (in km) and estimated travel time for the route between the two right-clicked points",
+        "10. Click the zoom-to-fit or route-bounds button (if available) and verify the map adjusts its zoom level and center to show the entire route within the viewport"
+      ]
+    },
+    {
+      "name": "Test Case 2: Route Planning with Address Search and Waypoints",
+      "description": "Verify end-to-end route planning using autocomplete search, adding an intermediate stop, and reversing the route",
+      "steps": [
+        "1. Navigate to http://localhost:8092/ and click on the start/origin input field in the routing panel, type 'Andorra la Vella', and verify an autocomplete dropdown appears with matching location suggestions",
+        "2. Select 'Andorra la Vella' from the dropdown and verify a marker appears on the map at Andorra la Vella and the input field displays the selected address",
+        "3. Click on the destination input field, type 'Canillo', select it from the autocomplete dropdown, and verify a route is calculated showing a colored path on the map with distance approximately 10-15 km and travel time displayed in the panel",
+        "4. Add an intermediate waypoint by clicking the '+' or add-stop button in the routing panel, type 'Encamp' in the new input field, and select it from the autocomplete suggestions",
+        "5. Verify the route updates to pass through Encamp between Andorra la Vella and Canillo, and the total distance and time increase compared to the direct route",
+        "6. Remove the Encamp waypoint by clicking the remove (x) button next to it in the routing panel and verify the route snaps back to the direct Andorra la Vella to Canillo path with the original distance and time restored",
+        "7. Click the reverse/swap button (arrows icon) between the start and destination fields and verify the start now shows 'Canillo' and destination shows 'Andorra la Vella' with the route direction reversed on the map",
+        "8. Clear the destination field, type 'Ordino', and select it from autocomplete and verify the route updates to show Canillo to Ordino with a new distance and time",
+        "9. Clear all route inputs using the clear/reset button and verify the map removes all markers and route lines, returning to a clean map state with empty input fields",
+        "10. Verify that after clearing, typing a new location in the start field still triggers autocomplete suggestions, confirming the search functionality resets properly"
+      ]
+    },
+    {
+      "name": "Test Case 3: Multi-Modal Transport Comparison and Route Details",
+      "description": "Verify switching between vehicle profiles (car, bike, foot) produces different routes, distances, and travel times for the same origin and destination",
+      "steps": [
+        "1. Navigate to http://localhost:8092/, set the start to 'La Massana' and destination to 'Encamp' using the autocomplete search, and verify a car route is displayed by default with distance and travel time shown",
+        "2. Note down the car route's distance and travel time, then click the bicycle/bike profile icon in the routing panel and verify the route recalculates with a different (likely longer) travel time while the distance may stay similar or change slightly",
+        "3. Click the foot/walking profile icon and verify the travel time increases significantly compared to both car and bicycle modes (walking should be the slowest), and note the distance which may differ due to pedestrian-only paths",
+        "4. Click back to the car profile and verify the distance and time return to the original car values, confirming profile switching is stateless and does not corrupt previous calculations",
+        "5. With the car profile active, hover over or click on the route line on the map and verify turn-by-turn direction details or route segment information is displayed (e.g., road names, turn instructions)",
+        "6. Verify the route summary panel shows additional details such as the route profile name (car/bike/foot), and that the distance units are displayed in km",
+        "7. Switch to the bicycle profile and visually compare the route path on the map with the car route — verify the bike route may avoid highways or take different roads more suitable for cycling",
+        "8. Change the destination to 'Canillo' while still on the bicycle profile and verify the route updates for the new longer distance with recalculated bike-specific travel time",
+        "9. Switch to the walking profile for the La Massana to Canillo route and verify the walking time is substantially longer (likely over 2 hours) reflecting the ~15-20 km mountainous terrain",
+        "10. Verify the map displays the walking route which may include footpaths and trails not shown on the car route, demonstrating that different profiles use different road network segments"
+      ]
+    }
+  ]
+}

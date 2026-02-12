@@ -297,6 +297,37 @@ stop_response = requests.post(
 print("✓ Container stopped and removed")
 ```
 
+## Preconfigured Test Applications
+
+The following SaaS applications are preconfigured in `config/saas-images.json` with ready-to-use test suites:
+
+| Application | Port | Docker Image | Description |
+|-------------|------|-------------|-------------|
+| PrestaShop | 8086 | `prestashop/prestashop:8` | E-commerce platform (product search, filtering, cart) |
+| FileBrowser | 8087 | `filebrowser/filebrowser:latest` | Web-based file manager (upload, download, preview) |
+| Focalboard | 8088 | `mattermost/focalboard:latest` | Project management with board, table, calendar views |
+| Centrifugo | 8089 | `centrifugo/centrifugo:v6` | Real-time messaging (WebSocket, SSE, HTTP-streaming) |
+| DocuSeal | 8090 | `docuseal/docuseal:latest` | Document signing and e-signature workflows |
+| Excalidraw | 8091 | `excalidraw/excalidraw:latest` | Whiteboard for drawing and diagramming |
+| GraphHopper | 8092 | `israelhikingmap/graphhopper:latest` | Route planner with map navigation and distance calculation |
+
+### GraphHopper Setup
+
+GraphHopper is an open-source route planner using OpenStreetMap data. It comes preloaded with **Andorra** map data (~3MB) for lightweight testing.
+
+**Test suite covers 3 test cases (10 steps each):**
+1. **Map Interaction & Visual Controls** - zoom, pan, right-click context menu
+2. **Route Planning with Search & Waypoints** - autocomplete search, intermediate stops, route reversal
+3. **Multi-Modal Transport Comparison** - car vs bike vs walking routes, distance/time comparison
+
+**Apple Silicon (ARM64) Note:** The upstream Docker image has a JDK crash on ARM64. A custom Dockerfile (`config/graphhopper.Dockerfile`) fixes this by rebasing onto a patched JDK. To build locally:
+
+```bash
+docker build --load -t israelhikingmap/graphhopper:latest -f config/graphhopper.Dockerfile config/
+```
+
+This tags the fixed image as `israelhikingmap/graphhopper:latest` so it works seamlessly with the config. On amd64 servers (production), the upstream image works without this step.
+
 ## Security Considerations
 
 - Set a strong `API_KEY` in production
