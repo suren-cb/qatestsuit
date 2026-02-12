@@ -264,6 +264,40 @@ BENCHMARK_TEST_CASES = [
             "7. Switch back to the original theme",
         ],
     },
+
+    # ===== OSRM (2 test cases) =====
+    {
+        "website": "osrm",
+        "test_name": "Route Planning With Detour and Reset",
+        "type": "Map navigation and routing - Tests the agent's ability to plan a route, introduce a detour, validate route recalculation, and reset the map state",
+        "instructions": [
+            "1. Navigate to http://localhost:8092/",
+            "2. Verify the OSRM map loads with Start and End search fields and a visible map canvas",
+            "3. Enter 'Monaco-Ville' as Start and 'Monte Carlo' as End, then submit",
+            "4. Verify a route appears with distance and travel time shown",
+            "5. Drag the route line to create a detour via a different street",
+            "6. Verify the route recalculates and the distance/time values change",
+            "7. Zoom in until street names are readable, then zoom out to view the full route",
+            "8. Clear or reset the route using the UI control",
+            "9. Verify the map returns to its default state with no route shown",
+        ],
+    },
+    {
+        "website": "osrm",
+        "test_name": "Swap Directions and Step Focus",
+        "type": "Directions panel interaction - Tests the agent's ability to swap route direction, use the turn-by-turn list, and validate map focus",
+        "instructions": [
+            "1. Navigate to http://localhost:8092/",
+            "2. Set Start to 'Fontvieille, Monaco' and End to 'Casino de Monte-Carlo'",
+            "3. Verify the route renders and the turn-by-turn list is visible",
+            "4. Click the swap/reverse directions control to flip Start and End",
+            "5. Verify the route updates and the distance/time values change",
+            "6. Click the third turn instruction in the list",
+            "7. Verify the map pans/zooms to highlight that segment of the route",
+            "8. Click a different instruction and verify the map focus changes again",
+            "9. End the route by clearing the inputs or using the reset control",
+        ],
+    },
 ]
 
 

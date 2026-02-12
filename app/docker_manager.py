@@ -105,15 +105,23 @@ class DockerManager:
 
         host_port = self._find_available_port()
 
-        container = self.client.containers.run(
-            image=dep_config["image_name"],
-            name=container_name,
-            ports={f"{dep_config['exposed_port']}/tcp": host_port},
-            detach=True,
-            environment=dep_config.get("env", []),
-            auto_remove=False,
-            network=network_name,
-        )
+        dep_container_config = {
+            "image": dep_config["image_name"],
+            "name": container_name,
+            "ports": {f"{dep_config['exposed_port']}/tcp": host_port},
+            "detach": True,
+            "environment": dep_config.get("env", []),
+            "auto_remove": False,
+            "network": network_name,
+        }
+
+        if dep_config.get("command"):
+            dep_container_config["command"] = dep_config["command"]
+
+        if dep_config.get("entrypoint"):
+            dep_container_config["entrypoint"] = dep_config["entrypoint"]
+
+        container = self.client.containers.run(**dep_container_config)
 
         # Set network alias so the main container can reach it by dependency id
         network = self.client.networks.get(network_name)

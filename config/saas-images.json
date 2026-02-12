@@ -117,6 +117,40 @@
       "env": [],
       "waitTime": 10000,
       "healthCheck": "/"
+    },
+    {
+      "id": "osrm",
+      "name": "OSRM Frontend",
+      "imageName": "osrm/osrm-frontend:latest",
+      "exposedPort": 9966,
+      "hostPort": 8092,
+      "description": "Open-source routing UI backed by OSRM (Open Source Routing Machine)",
+      "env": [
+        "OSRM_BACKEND=http://osrm-backend:5000",
+        "OSRM_CENTER=43.7311,7.4197",
+        "OSRM_ZOOM=13",
+        "OSRM_LANGUAGE=en",
+        "OSRM_LABEL=Car (fastest)"
+      ],
+      "waitTime": 15000,
+      "healthCheck": "/",
+      "dependencies": [
+        {
+          "id": "osrm-backend",
+          "imageName": "monogramm/docker-osrm-backend:latest",
+          "exposedPort": 5000,
+          "env": [
+            "OSRM_PORT=5000",
+            "OSRM_PROFILE=/opt/car.lua",
+            "OSRM_GEOFABRIK_PATH=europe/monaco-latest.osm.pbf",
+            "OSRM_MAP_NAME=monaco-latest",
+            "OSRM_ALGORITHM=mld"
+          ],
+          "command": ["start"],
+          "waitTime": 180000,
+          "healthCheck": null
+        }
+      ]
     }
   ]
 }

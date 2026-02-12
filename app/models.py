@@ -110,6 +110,8 @@ class DependencyConfig(BaseModel):
     image_name: str = Field(..., description="Docker image name for the dependency")
     exposed_port: int = Field(..., description="Port exposed by the dependency container")
     env: List[str] = Field(default=[], description="Environment variables")
+    command: Optional[List[str]] = Field(None, description="Command/args to pass to the dependency entrypoint")
+    entrypoint: Optional[List[str]] = Field(None, description="Override the dependency entrypoint")
     wait_time: int = Field(default=30000, description="Time to wait for dependency to be ready (ms)")
     health_check: Optional[str] = Field(None, description="Health check path")
 

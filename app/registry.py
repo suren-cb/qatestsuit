@@ -199,6 +199,8 @@ class ImageRegistry:
                         image_name=dep["imageName"],
                         exposed_port=dep["exposedPort"],
                         env=dep.get("env", []),
+                        command=dep.get("command"),
+                        entrypoint=dep.get("entrypoint"),
                         wait_time=dep.get("waitTime", 30000),
                         health_check=dep.get("healthCheck"),
                     ))

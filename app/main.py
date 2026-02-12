@@ -295,6 +295,8 @@ async def start_container(request: StartContainerRequest):
                     "image_name": dep.image_name,
                     "exposed_port": dep.exposed_port,
                     "env": dep.env,
+                    "command": dep.command,
+                    "entrypoint": dep.entrypoint,
                     "wait_time": dep.wait_time,
                 }
                 for dep in image.dependencies
