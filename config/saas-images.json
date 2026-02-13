@@ -61,7 +61,7 @@
       "description": "Open-source task and project management tool with board, table, and calendar views",
       "env": [],
       "entrypoint": ["bash", "-c"],
-      "command": ["/opt/focalboard/bin/focalboard-server & sleep 5; exec 3<>/dev/tcp/localhost/8000 && printf 'POST /api/v2/register HTTP/1.1\\r\\nHost: localhost:8000\\r\\nContent-Type: application/json\\r\\nX-Requested-With: XMLHttpRequest\\r\\nContent-Length: 72\\r\\nConnection: close\\r\\n\\r\\n{\"username\":\"admin\",\"email\":\"admin@test.com\",\"password\":\"admin12345678\"}' >&3 && cat <&3 && exec 3>&-; wait"],
+      "command": ["/opt/focalboard/bin/focalboard-server & for i in $(seq 1 10); do sleep 3; exec 3<>/dev/tcp/localhost/8000 && printf 'POST /api/v2/register HTTP/1.1\\r\\nHost: localhost:8000\\r\\nContent-Type: application/json\\r\\nX-Requested-With: XMLHttpRequest\\r\\nContent-Length: 72\\r\\nConnection: close\\r\\n\\r\\n{\"username\":\"admin\",\"email\":\"admin@test.com\",\"password\":\"admin12345678\"}' >&3 && cat <&3 && exec 3>&- && break || echo \"Attempt $i failed, retrying...\"; done; wait"],
       "credentials": {"username": "admin", "password": "admin12345678"},
       "waitTime": 15000,
       "healthCheck": "/"
